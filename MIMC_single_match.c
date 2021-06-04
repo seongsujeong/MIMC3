@@ -1,0 +1,562 @@
+/*
+Functionality
+Perform the single set of feature tracking
+Input:
+ - Reference image in (geo)tiff
+ - Secondary image in (geo)tiff
+ - XYUVAV in GMA
+ - half-width of the reference chip. Default=15
+
+Output:
+ - N by 8 text file, for example:
+   15240   -19.281    9734     -60.969   21.88929   0.077615   0.036610   0.010349
+   15245   -19.375    9734     -60.859   18.07311   0.071975   0.029405   0.006667
+   15250   -19.875    9734     -60.797   16.07086   0.052075   0.082388   0.001319
+   15260   -16.938    9734     -54.141   11.51158   0.135587   0.118631   0.001204
+   15305   -16.250    9734     -59.953   17.06785   0.040221   0.050732   0.001331
+   15315   -18.500    9734     -61.500    2.04585   0.278487   0.686405   0.225665
+    1105   -19.078    9739     -56.703   19.04320   0.213160   0.108856   0.003194
+    1130   -23.750    9739     -57.312    2.37864   0.423505   0.198462  -0.205603
+    1520   -19.547    9739     -59.906   10.06727   0.465003   0.475667  -0.292236
+    1525   -22.203    9739     -60.906    7.56803   0.116502   0.108766   0.033379
+    1530   -22.250    9739     -60.641    5.43980   0.216814   0.728949   0.284087
+
+*/
+
+
+
+#ifndef _STDIO_H_
+#include <stdio.h>
+#endif
+
+#ifndef _STDLIB_H_
+#include <stdlib.h>
+#endif
+
+#ifndef _MATH_H_
+#include <math.h>
+#endif
+
+#ifndef _MIMC2_MODULE_
+#include "MIMC_module.h"
+#endif
+
+#ifndef _MIMC2_MISC_
+#include "MIMC_misc.h"
+#endif
+
+#ifndef _GMA_
+#include "GMA.h"
+#endif
+
+#ifndef _TIME_H_
+#include <time.h>
+#endif
+
+#ifndef _OMP_H
+#include <omp.h>
+#endif
+
+#ifndef _TIFFIO_
+#include "tiffio.h"
+#endif
+
+//list of global variables
+float dt;   //temporal baseline
+int32_t num_dp; //number of multiple matching attempts
+int32_t num_grid,dimx_vmap,dimy_vmap; //# of grids, dimension in mapx and mapy direction
+param param_mimc2;  //parameters that controlls the software
+GMA_float **kernel; //kernel for the convolution filter
+int main(int argc, char* argv[])
+{
+    char string_ver[]="3.0.5";
+
+    printf("\n\nMIMC version %s\n",string_ver);
+    printf("\n*** Single match version ***\n");
+    printf("(C)Seongsu Jeong, Department of Earth System Science\nUniversity of California, Irvine\n");
+    printf("Official MIMC website: iceflow.wordpress.com\n");
+    printf("Please address all the related concerns through the website above.\n\n");
+
+    /*
+    input:
+    - argv[1]: i0
+    - argv[2]: i1
+    - argv[3]: xyuvav
+    - argv[4]: outout directory
+    */
+
+    
+    unsigned int cnt,cntc,cnt1,cnt2;
+    
+    //GMA_uint16 *i0, *i1;
+    GMA_float *i0, *i1, *i0c, *i1c;
+    GMA_double *xyuvav;
+    GMA_double *t0t1;
+    GMA_int32 **uv_pivot;
+    GMA_float *dp[32];
+    GMA_float **vxyexyqual;
+    //char gma_out[512];
+    //param param_mimc2;
+    //time_t t0=0,t1=0;
+    double t0=0, t1=0;
+    num_dp=32;
+    
+    int32_t ocw;
+    int32_t cnt_grid;
+
+    char timestampstr_i0[15];
+    char timestampstr_i1[15];
+    
+    //outout filenames
+    char filename_x[1024];
+    char filename_y[1024];
+    char filename_vx[1024];
+    char filename_vy[1024];
+    char filename_ex[1024];
+    char filename_ey[1024];
+    char filename_qual[1024];
+    char filename_flagcp[1024];
+    char filename_meta[1024];
+    char filename_vmap[1024];
+    char string_command[4096];
+    
+
+
+    getTimeStampStr(argv[1],timestampstr_i0);
+    getTimeStampStr(argv[2],timestampstr_i1);    
+
+    sprintf(filename_x,"%s/vmap_%s_%s_x.GMA",argv[4],timestampstr_i0,timestampstr_i1);
+    sprintf(filename_y,"%s/vmap_%s_%s_y.GMA",argv[4],timestampstr_i0,timestampstr_i1);
+    sprintf(filename_vx,"%s/vmap_%s_%s_vx.GMA",argv[4],timestampstr_i0,timestampstr_i1);
+    sprintf(filename_vy,"%s/vmap_%s_%s_vy.GMA",argv[4],timestampstr_i0,timestampstr_i1);
+    sprintf(filename_ex,"%s/vmap_%s_%s_ex.GMA",argv[4],timestampstr_i0,timestampstr_i1);
+    sprintf(filename_ey,"%s/vmap_%s_%s_ey.GMA",argv[4],timestampstr_i0,timestampstr_i1);
+    sprintf(filename_qual,"%s/vmap_%s_%s_qual.GMA",argv[4],timestampstr_i0,timestampstr_i1);
+    sprintf(filename_flagcp,"%s/vmap_%s_%s_flagcp.GMA",argv[4],timestampstr_i0,timestampstr_i1);
+    sprintf(filename_meta,"%s/vmap_%s_%s_meta.txt",argv[4],timestampstr_i0,timestampstr_i1);
+    sprintf(filename_vmap,"%s/vmap_%s_%s.tar",argv[4],timestampstr_i0,timestampstr_i1);
+
+    //check the existence of the vmap
+    //TODO: Skip the processing if all result files exists
+
+    dt=get_dt(timestampstr_i0,timestampstr_i1);
+    
+    printf("Input files:\n",argv[1]);
+    printf("dt=%f days\n\n",dt);
+    printf("Earlier image: %s\n",argv[1]);
+    printf("Latter image: %s\n",argv[2]);
+    printf("xyuvav matrix: %s\n",argv[3]);
+    
+    printf("output files:\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n",filename_x,filename_y,filename_vx,filename_vy,filename_ex,filename_ey,filename_qual,filename_flagcp,filename_meta,filename_vmap);
+
+    sprintf(string_command,"ls -l %s",filename_vmap);
+    int status_exixtence_vmap=system(string_command);
+    if(status_exixtence_vmap==0)
+    {
+        printf("vmap already exists. Skipping\n");
+        return -1;
+    }
+    
+    //define the param
+    printf("Definining params...");
+    param_mimc2.vec_ocw[0]=7;
+    param_mimc2.vec_ocw[1]=15;
+    param_mimc2.vec_ocw[2]=30;
+    param_mimc2.vec_ocw[3]=40;
+    
+    //Faster feature tracking for testing the portprocessing algorithm
+    //param_mimc2.vec_ocw[0]=7;
+    //param_mimc2.vec_ocw[1]=10;
+    //param_mimc2.vec_ocw[2]=15;
+    //param_mimc2.vec_ocw[3]=11;
+    
+    //Larger window size for highres image
+    //param_mimc2.vec_ocw[0]=14;
+    //param_mimc2.vec_ocw[1]=30;
+    //param_mimc2.vec_ocw[2]=60;
+    //param_mimc2.vec_ocw[3]=80;
+    
+
+    param_mimc2.AW_CRE=10.0;
+    param_mimc2.AW_SF=1.8;
+    param_mimc2.mpp=15; //meter per pixel
+    param_mimc2.spacing_grid=300; //meter per pixel
+
+    //param_mimc2.radius_neighbor=1500;
+    //param_mimc2.radius_neighbor_dpf1_px=1000;
+    //param_mimc2.radius_neighbor_ps=1500;
+    param_mimc2.radius_neighbor=5.0;
+    param_mimc2.radius_neighbor_dpf1=1000/300;
+    param_mimc2.radius_neighbor_ps=5.0;
+    //note change the unit of those radius values as spacing
+    
+    param_mimc2.num_cp_max=500;
+    param_mimc2.num_cp_min=50;
+    param_mimc2.ratio_cp=0.03;
+    param_mimc2.thres_spd_cp=10;
+
+    printf("successful\n");
+
+    
+    //designate the kernel
+    printf("Definining Kernels...");
+    kernel=(GMA_float**)malloc(sizeof(GMA_float*)*3);
+    kernel[0]=GMA_float_create(1,3);    //horizontal gradient
+    kernel[1]=GMA_float_create(3,1);    //vertical gradient
+    kernel[2]=GMA_float_create(3,3);    //Laplacian
+    
+    kernel[0]->val[0][0]=-1;
+    kernel[0]->val[0][1]=0;
+    kernel[0]->val[0][2]=1;
+
+    kernel[1]->val[0][0]=-1;
+    kernel[1]->val[1][0]=0;
+    kernel[1]->val[2][0]=1;
+
+    kernel[2]->val[0][0]=-1.0/8;
+    kernel[2]->val[0][1]=-1.0/8;
+    kernel[2]->val[0][2]=-1.0/8;
+    kernel[2]->val[1][0]=-1.0/8;
+    kernel[2]->val[1][1]=1.0;
+    kernel[2]->val[1][2]=-1.0/8;
+    kernel[2]->val[2][0]=-1.0/8;
+    kernel[2]->val[2][1]=-1.0/8;
+    kernel[2]->val[2][2]=-1.0/8;
+
+    printf("successful\n");
+    
+    //load xyuvav
+    printf("Loading xyuvav...");
+    //xyuvav=GMA_double_load("../MIMC2_C_GMA/xyuvav_rect_interp.GMA");
+    xyuvav=GMA_double_load(argv[3]);
+    num_grid=xyuvav->nrows;
+    printf("successful\n");
+
+    
+
+    num_grid=xyuvav->nrows;
+    //calculate dimx_vmap and dimy_vmap
+    for(cnt_grid=1;cnt_grid<num_grid;cnt_grid++)
+    {
+        if((int)xyuvav->val[cnt_grid][2]==(int)xyuvav->val[0][2])
+        {
+            break;
+        }
+    }
+    dimx_vmap=cnt_grid;
+    dimy_vmap=num_grid/dimx_vmap;
+
+    param_mimc2.mpp=(float)((xyuvav->val[1][0]-xyuvav->val[0][0])/(xyuvav->val[1][2]-xyuvav->val[0][2]));
+    param_mimc2.spacing_grid=(float)(xyuvav->val[1][2]-xyuvav->val[0][2]);
+    param_mimc2.meter_per_spacing=(float)(xyuvav->val[1][0]-xyuvav->val[0][0]);
+
+    printf("MPP=%f, grid spacing=%f, meter per spacing=%fm\nDimension of the vmap: %d by %d (mapy / mapx)\n",param_mimc2.mpp,param_mimc2.spacing_grid,param_mimc2.meter_per_spacing,dimy_vmap,dimx_vmap);
+    
+    //load the images
+    printf("Loading i0 and i1...");
+    i0=GMA_float_load_tiff(argv[1]);
+    i1=GMA_float_load_tiff(argv[2]);
+    
+    printf("successful\n");
+    
+    
+
+    //Measure the CP offset of the image pair
+    printf("Measuring CP offset - ");
+    int32_t offset_cp[2],offset_cp_reverse[2];
+    GMA_uint8 *flag_cp=GMA_uint8_create(num_grid,1);
+    for(cnt_grid=0;cnt_grid<num_grid;cnt_grid++)
+    {
+        flag_cp->val[cnt_grid][0]=0;
+    }
+    offset_cp[0]=0;
+    offset_cp[1]=0;
+    if(get_offset_image(i0,i1,kernel,xyuvav,offset_cp,flag_cp)<0)
+    {
+        printf("Generating dummy vmap file.\n");
+        sprintf(string_command,"touch %s",filename_vmap);
+        system(string_command);
+        return -1;
+    }
+
+
+    offset_cp_reverse[0]=-offset_cp[0];
+    offset_cp_reverse[1]=-offset_cp[1];
+    printf("Measured offset: [%d, %d] pixels (i1-i0)\n",offset_cp[0],offset_cp[1]);
+
+    //Perform main feature tracking
+    printf("Initiating matching\n");
+    for(cnt=0;cnt<4;cnt++)
+    {
+        ocw=param_mimc2.vec_ocw[cnt];
+        uv_pivot=get_uv_pivot(xyuvav, dt, param_mimc2, ocw, i1);
+        printf("Feature tracking - ocw=%d, Original forward - ",ocw);
+        t0=omp_get_wtime();
+        dp[cnt*2]=matching_ncc_dlc_2(i0,i1,xyuvav,offset_cp,uv_pivot,ocw,param_mimc2.AW_CRE,param_mimc2.AW_SF);
+        t1=omp_get_wtime();
+        printf("Elapsed time: %f\n",(t1-t0));
+        //reverse uv_pivot
+        //printf("Reversing the pivot...");
+        for(cnt1=0;cnt1<xyuvav->nrows;cnt1++)
+        {
+            for(cnt2=0;cnt2<uv_pivot[cnt1]->nrows;cnt2++)
+            {
+                uv_pivot[cnt1]->val[cnt2][0]=-(uv_pivot[cnt1]->val[cnt2][0]);
+                uv_pivot[cnt1]->val[cnt2][1]=-(uv_pivot[cnt1]->val[cnt2][1]);
+            }
+        }
+        //printf("Successful\n");
+        
+        printf("Feature tracking - ocw=%d, Swapped forward - ",ocw);
+        t0=omp_get_wtime();
+        dp[cnt*2+1]=matching_ncc_dlc_2(i1,i0,xyuvav,offset_cp_reverse,uv_pivot,ocw,param_mimc2.AW_CRE,param_mimc2.AW_SF);
+        t1=omp_get_wtime();
+        printf("Elapsed time: %f\n",(t1-t0));
+        
+        //reverse dp
+        for(cnt1=0;cnt1<xyuvav->nrows;cnt1++)
+        {
+            dp[cnt*2+1]->val[cnt1][0]=-(dp[cnt*2+1]->val[cnt1][0]);
+            dp[cnt*2+1]->val[cnt1][1]=-(dp[cnt*2+1]->val[cnt1][1]);
+        }
+        
+        for(cnt1=0;cnt1<xyuvav->nrows;cnt1++)
+        {
+            GMA_int32_destroy(uv_pivot[cnt1]);
+        }
+        
+    }
+
+
+    //Perform multiple matching for the filtered images
+    i0c=GMA_float_create(i0->nrows,i0->ncols);
+    i1c=GMA_float_create(i1->nrows,i1->ncols);
+    for(cnt=0;cnt<3;cnt++)  //loop for the kernel for the spatial filter
+    {
+        printf("Generating filtered image (%d of %d)...",cnt,3);
+        GMA_float_conv2(i0,kernel[cnt],i0c);
+        GMA_float_conv2(i1,kernel[cnt],i1c);
+        printf("successful\n");
+        for(cntc=0;cntc<4;cntc++)   //loop for the reference chip size
+        {
+            ocw=param_mimc2.vec_ocw[cntc];
+            uv_pivot=get_uv_pivot(xyuvav, dt, param_mimc2, ocw, i1);
+            printf("Feature tracking - ocw=%d, Original forward - ",ocw);
+            t0=omp_get_wtime();
+            dp[cnt*8+cntc*2+8]=matching_ncc_dlc_2(i0c,i1c,xyuvav,offset_cp,uv_pivot,ocw,param_mimc2.AW_CRE,param_mimc2.AW_SF);
+            t1=omp_get_wtime();
+            printf("Elapsed time: %f\n",(t1-t0));
+            
+            //reverse uv_pivot
+            for(cnt1=0;cnt1<xyuvav->nrows;cnt1++)
+            {
+                for(cnt2=0;cnt2<uv_pivot[cnt1]->nrows;cnt2++)
+                {
+                    uv_pivot[cnt1]->val[cnt2][0]=-(uv_pivot[cnt1]->val[cnt2][0]);
+                    uv_pivot[cnt1]->val[cnt2][1]=-(uv_pivot[cnt1]->val[cnt2][1]);
+                }
+            }
+            printf("Feature tracking - ocw=%d, Swapped forward - ",ocw);
+            t0=omp_get_wtime();
+            dp[cnt*8+cntc*2+1+8]=matching_ncc_dlc_2(i1c,i0c,xyuvav,offset_cp_reverse,uv_pivot,ocw,param_mimc2.AW_CRE,param_mimc2.AW_SF);
+            t1=omp_get_wtime();
+            printf("Elapsed time: %f\n",(t1-t0));
+            
+            //reverse dp
+            for(cnt1=0;cnt1<xyuvav->nrows;cnt1++)
+            {
+                dp[cnt*8+cntc*2+1+8]->val[cnt1][0]=-(dp[cnt*8+cntc*2+1+8]->val[cnt1][0]);
+                dp[cnt*8+cntc*2+1+8]->val[cnt1][1]=-(dp[cnt*8+cntc*2+1+8]->val[cnt1][1]);
+            }
+            
+            for(cnt1=0;cnt1<xyuvav->nrows;cnt1++)
+            {
+                GMA_int32_destroy(uv_pivot[cnt1]);
+            }
+            
+        }
+    }
+    //Feature tracking complete. Proceeding to the postprocessing
+    printf("Initiating postprocessing\n");
+    vxyexyqual=mimc2_postprocess(dp,xyuvav,dt);
+    printf("checkpoint 5\n");
+    //correct translative offset in the FT result
+    float sdu=0.0;
+    float sdv=0.0;
+    float du_cp=0.0;
+    float dv_cp=0.0;
+    float ducp,dvcp;
+    int32_t num_cp=0;
+    for(cnt1=0;cnt1<dimy_vmap;cnt1++)
+    {
+        for(cnt2=0;cnt2<dimx_vmap;cnt2++)
+        {
+            cnt_grid=cnt1*dimx_vmap+cnt2;
+            ducp=vxyexyqual[0]->val[cnt1][cnt2];
+            dvcp=vxyexyqual[1]->val[cnt1][cnt2];
+            if(!isnan(ducp) && !isnan(dvcp))
+            {
+                sdu+=ducp;
+                sdv+=dvcp;
+                num_cp++;
+            }
+        }
+    }
+    du_cp=sdu/(float)num_cp;
+    dv_cp=sdv/(float)num_cp;
+    printf("checkpoint 6\n");
+    for(cnt1=0;cnt1<dimy_vmap;cnt1++)
+    {
+        for(cnt2=0;cnt2<dimx_vmap;cnt2++)
+        {
+            vxyexyqual[0]->val[cnt1][cnt2]=vxyexyqual[0]->val[cnt1][cnt2]-du_cp;
+            vxyexyqual[1]->val[cnt1][cnt2]=vxyexyqual[1]->val[cnt1][cnt2]-dv_cp;
+        }
+    }
+
+
+    printf("checkpoint 7\n");
+    //convert the image displacement to the movement in map coordinates
+    float factor_image_to_map=param_mimc2.mpp/dt*365;
+    for(cnt1=0;cnt1<dimy_vmap;cnt1++)
+    {
+        for(cnt2=0;cnt2<dimx_vmap;cnt2++)
+        {
+            vxyexyqual[0]->val[cnt1][cnt2]=vxyexyqual[0]->val[cnt1][cnt2]*factor_image_to_map;
+            vxyexyqual[1]->val[cnt1][cnt2]=-vxyexyqual[1]->val[cnt1][cnt2]*factor_image_to_map;
+            vxyexyqual[2]->val[cnt1][cnt2]=sqrt(vxyexyqual[2]->val[cnt1][cnt2])*factor_image_to_map;
+            vxyexyqual[3]->val[cnt1][cnt2]=sqrt(vxyexyqual[3]->val[cnt1][cnt2])*factor_image_to_map;
+        }
+    }
+
+    printf("checkpoint 8\n");
+    //extract x and y grid and save it to GMA
+    GMA_double *grid_x=GMA_double_create(1,dimx_vmap);
+    GMA_double *grid_y=GMA_double_create(1,dimy_vmap);
+    for(cnt=0;cnt<dimx_vmap;cnt++)
+    {
+        grid_x->val[0][cnt]=xyuvav->val[cnt][0];
+    }
+    for(cnt=0;cnt<dimy_vmap;cnt++)
+    {
+        grid_y->val[0][cnt]=xyuvav->val[cnt*dimx_vmap][1];
+    }
+
+    printf("Saving the output\n");
+    GMA_uint8 *flag_cp_2d=GMA_uint8_create(dimy_vmap,dimx_vmap);
+    for(cnt=0;cnt<dimy_vmap;cnt++)
+    {
+        for(cnt1=0;cnt1<dimx_vmap;cnt1++)
+        {
+            flag_cp_2d->val[cnt][cnt1]=flag_cp->val[cnt*dimx_vmap+cnt1][0];
+        }
+    }
+
+    printf("checkpoint 9\n");
+    GMA_double_save(filename_x,grid_x);
+    GMA_double_save(filename_y,grid_y);
+    GMA_float_save(filename_vx,vxyexyqual[0]);
+    GMA_float_save(filename_vy,vxyexyqual[1]);
+    GMA_float_save(filename_ex,vxyexyqual[2]);
+    GMA_float_save(filename_ey,vxyexyqual[3]);
+    GMA_float_save(filename_qual,vxyexyqual[4]);
+    GMA_uint8_save(filename_flagcp,flag_cp_2d);
+    printf("checkpoint 10\n");
+    //save the metadata
+    FILE *fout;
+	fout=fopen(filename_meta,"w");
+    fprintf(fout,"MIMC_version=%s\n",string_ver);
+    fprintf(fout,"name_i0=%s\n",argv[1]);
+    fprintf(fout,"name_i1=%s\n",argv[2]);
+    fprintf(fout,"cp_offset_int_u=%d\n",offset_cp[0]);
+    fprintf(fout,"cp_offset_int_v=%d\n",offset_cp[1]);
+    fprintf(fout,"cp_offset_subint_u=%f\n",du_cp);
+    fprintf(fout,"cp_offset_subint_v=%f\n",dv_cp);
+    fclose(fout);
+
+    //sprintf(filename_x,"vmap_%s_%s_x.GMA",timestampstr_i0,timestampstr_i1);
+    //sprintf(filename_y,"vmap_%s_%s_y.GMA",timestampstr_i0,timestampstr_i1);
+    //sprintf(filename_vx,"vmap_%s_%s_vx.GMA",timestampstr_i0,timestampstr_i1);
+    //sprintf(filename_vy,"vmap_%s_%s_vy.GMA",timestampstr_i0,timestampstr_i1);
+    //sprintf(filename_ex,"vmap_%s_%s_ex.GMA",timestampstr_i0,timestampstr_i1);
+    //sprintf(filename_ey,"vmap_%s_%s_ey.GMA",timestampstr_i0,timestampstr_i1);
+    //sprintf(filename_qual,"vmap_%s_%s_qual.GMA",timestampstr_i0,timestampstr_i1);
+    //sprintf(filename_flagcp,"vmap_%s_%s_flagcp.GMA",timestampstr_i0,timestampstr_i1);
+    //sprintf(filename_meta,"vmap_%s_%s_meta.txt",timestampstr_i0,timestampstr_i1);
+    //sprintf(filename_vmap,"vmap_%s_%s.tar",timestampstr_i0,timestampstr_i1);
+
+
+    //                                 1  2  3  4  5  6  7  8  9 10    11
+    sprintf(string_command,"tar -cvzf %s %s %s %s %s %s %s %s %s %s -C %s",
+    filename_vmap,filename_x,filename_y,filename_vx,filename_vy,filename_ex,filename_ey,filename_qual,filename_flagcp,filename_meta,argv[4]);
+  //1             2          3          4           5           6           7           8             9               10            11
+    system(string_command);
+    //printf("%s\n",string_command);
+
+    //sprintf(filename_x,"%s/vmap_%s_%s_x.GMA",argv[4],timestampstr_i0,timestampstr_i1);
+    //sprintf(filename_y,"%s/vmap_%s_%s_y.GMA",argv[4],timestampstr_i0,timestampstr_i1);
+    //sprintf(filename_vx,"%s/vmap_%s_%s_vx.GMA",argv[4],timestampstr_i0,timestampstr_i1);
+    //sprintf(filename_vy,"%s/vmap_%s_%s_vy.GMA",argv[4],timestampstr_i0,timestampstr_i1);
+    //sprintf(filename_ex,"%s/vmap_%s_%s_ex.GMA",argv[4],timestampstr_i0,timestampstr_i1);
+    //sprintf(filename_ey,"%s/vmap_%s_%s_ey.GMA",argv[4],timestampstr_i0,timestampstr_i1);
+    //sprintf(filename_qual,"%s/vmap_%s_%s_qual.GMA",argv[4],timestampstr_i0,timestampstr_i1);
+    //sprintf(filename_flagcp,"%s/vmap_%s_%s_flagcp.GMA",argv[4],timestampstr_i0,timestampstr_i1);
+    //sprintf(filename_meta,"%s/vmap_%s_%s_meta.txt",argv[4],timestampstr_i0,timestampstr_i1);
+    //sprintf(filename_vmap,"%s/vmap_%s_%s.tar",argv[4],timestampstr_i0,timestampstr_i1);
+    //                          1  2  3  4  5  6  7  8  9
+    sprintf(string_command,"rm %s %s %s %s %s %s %s %s %s",
+    filename_x,filename_y,filename_vx,filename_vy,filename_ex,filename_ey,filename_qual,filename_flagcp,filename_meta);
+  //1           2         3           4           5           6           7             8               9
+    system(string_command);
+    //printf("%s\n",string_command);
+
+
+
+    //finalize the program - destroy the allocated arrays
+
+    //destroy the uv_pivot array
+    printf("Deallocating memory...");
+    printf("vxyexyqual and flag_cp...");
+    GMA_uint8_destroy(flag_cp_2d);
+    GMA_float_destroy(vxyexyqual[0]);
+    GMA_float_destroy(vxyexyqual[1]);
+    GMA_float_destroy(vxyexyqual[2]);
+    GMA_float_destroy(vxyexyqual[3]);
+    GMA_float_destroy(vxyexyqual[4]);
+    free(vxyexyqual);
+    
+    GMA_uint8_destroy(flag_cp);
+    
+    printf("i0...");
+    GMA_float_destroy(i0);
+    GMA_float_destroy(i0c);
+    printf("i1...");
+    GMA_float_destroy(i1);
+    GMA_float_destroy(i1c);
+    printf("xyuvav...");
+    GMA_double_destroy(xyuvav);
+    printf("1st kernel...");
+    GMA_float_destroy(kernel[0]);
+    printf("2nd kernel...");
+    GMA_float_destroy(kernel[1]);
+    printf("3rd kernel...");
+    GMA_float_destroy(kernel[2]);
+    printf("kernel array...");
+    free(kernel);
+    
+    printf("dp array...");
+    for(cnt=0;cnt<32;cnt++)
+    {
+        GMA_float_destroy(dp[cnt]);
+    }
+    printf("Successful\n");
+
+    
+    
+    printf("Processing completed\n");
+
+    return 0;
+}
+
+
+
