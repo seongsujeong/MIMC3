@@ -2,7 +2,6 @@ MIMC3
 =====
 
 Code by Seongsu Jeong at the Ohio State University (now at University of California, Irvine)
---------------------------------------------------------------------------------------------
 
 * Algorithm
   * The algorithm implemented in here is described in a paper "Improved Multiple Matching Method for Observing Glacier Motion With Repeat Image Feature Tracking" by [Jeong et al in 2017](https://ieeexplore.ieee.org/document/7827084) at IEEE Transactions on Geoscience and Remote Sensing (DOI: 10.1109/TGRS.2016.2643699)
@@ -22,7 +21,3 @@ Code by Seongsu Jeong at the Ohio State University (now at University of Califor
   * 1.0 : MIMC algorithm first proposed in a paper "Efficient automated glacier surface velocity measurement from repeat images using multi-image/multichip and null exclusion feature tracking" by Ahn and Howat in IEEE Transactions on Geoscience and Remote Sensing (DOI: 10.1109/TGRS.2011.2114891). Implementation was in MATLAB associated with C-MEX
   * 2.0 : The algorithm was revamped by DLC and QM. Implementation was in MATLAB, with utilization of C-MEX and parallel toolbox. This is the first implementation of the algorithms presented at [Jeong et al. (2017)](https://ieeexplore.ieee.org/document/7827084).
   * **3.0 : Codes in this repo.** Minor revision of the algorithm implemented in MIMC 2.0. Fully implemented in C program with utilization of OpenMP.
-
-
-
-
