@@ -1,3 +1,7 @@
+/*
+A main program to run single image matching.
+*/
+
 #ifndef _STDIO_H_
 #include <stdio.h>
 #endif

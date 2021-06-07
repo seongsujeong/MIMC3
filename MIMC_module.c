@@ -1162,7 +1162,7 @@ void cluster_euclidian(GMA_float *dp_stack, float min_dist, GMA_uint8 *id_cluste
             {
                 mtrx_dist->val[cnt1][cnt2]=0;
                 mtrx_dist->val[cnt2][cnt1]=0;
-            
+            }
         }
     }
 

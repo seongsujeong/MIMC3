@@ -106,7 +106,7 @@ typedef struct
     cpxd **val;
     cpxd *data;
     
-} GMA_cpxf;
+} GMA_cpxd;
 
 
 

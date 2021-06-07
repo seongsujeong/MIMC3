@@ -65,7 +65,6 @@ GMA_int32* GMA_int32_create(int32_t size_row, int32_t size_col)
 		out->val[cnt]=&(out->data[cnt*size_col]);
 	}
 	return out;
-
 }
 
 GMA_float* GMA_float_create(int32_t size_row, int32_t size_col)
@@ -82,7 +81,6 @@ GMA_float* GMA_float_create(int32_t size_row, int32_t size_col)
 		out->val[cnt]=&(out->data[cnt*size_col]);
 	}
 	return out;
-
 }
 
 GMA_double* GMA_double_create(int32_t size_row, int32_t size_col)
