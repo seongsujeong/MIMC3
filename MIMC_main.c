@@ -457,7 +457,7 @@ int main(int argc, char* argv[])
     //sprintf(filename_meta,"vmap_%s_%s_meta.txt",timestampstr_i0,timestampstr_i1);
     //sprintf(filename_vmap,"vmap_%s_%s.tar",timestampstr_i0,timestampstr_i1);
 
-
+/*
     //                                 1  2  3  4  5  6  7  8  9 10    11
     sprintf(string_command,"tar -cvzf %s %s %s %s %s %s %s %s %s %s -C %s",
     filename_vmap,filename_x,filename_y,filename_vx,filename_vy,filename_ex,filename_ey,filename_qual,filename_flagcp,filename_meta,argv[4]);
@@ -482,7 +482,7 @@ int main(int argc, char* argv[])
     system(string_command);
     //printf("%s\n",string_command);
 
-
+    */
 
     //finalize the program - destroy the allocated arrays
 
