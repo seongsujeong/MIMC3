@@ -1,3 +1,6 @@
 scripts/
 test_m-codes/
 .DS_Store
+MIMC3
+*.plist
+*.pyc
