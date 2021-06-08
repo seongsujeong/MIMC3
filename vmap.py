@@ -3,6 +3,7 @@ import gma
 import glob
 import numpy as np
 import os
+import matplotlib.pyplot as plt
 
 
 
@@ -14,10 +15,11 @@ class vmap:
             'y':None,
             'vx':None,
             'vy':None,
+            'spd':None,
             'ex':None,
             'ey':None,
             'qual':None,
-            'flag_cp':None,
+            'flagcp':None,
             'meta':None
         }
 
@@ -106,6 +108,25 @@ class vmap:
         return self._core_data['vy']
 
     @property
+    def spd(self):
+        if self._core_data['spd'] is None:
+            if self._core_data['vx'] is None:
+                try:
+                    self.load_gma(field=['vx'])
+                except:
+                    print('ERROR: vmap.spd() when loading vx')
+
+            if self._core_data['vy'] is None:
+                try:
+                    self.load_gma(field=['vy'])
+                except:
+                    print('ERROR: vmap.spd() when loading vy')
+
+        self._core_data['spd']=np.sqrt(self.vx**2+self.vy**2)
+
+        return self._core_data['spd']
+
+    @property
     def ex(self):
         if self._core_data['ex'] is None:
             try:
@@ -150,3 +171,15 @@ class vmap:
                 print('ERROR: vmap.meta()')
         return self._core_data['meta']
 
+    def adjust(self):
+        vxcp=self.vx[self.flagcp!=0]
+        vycp=self.vy[self.flagcp!=0]
+        
+        mvxcp=np.nanmean(vxcp)
+        mvycp=np.nanmean(vycp)
+
+        print('bias on cp: vx={}, vy={}'.format(mvxcp,mvycp))
+
+        self._core_data['vx']=self._core_data['vx']-mvxcp
+        self._core_data['vy']=self._core_data['vy']-mvycp
+        
