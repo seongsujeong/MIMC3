@@ -27,6 +27,8 @@ Code by Seongsu Jeong at the Ohio State University (now at University of Califor
     ```bash
     MIMC3 [first tiff image] [second tiff image] [xyuvav file] [output directory]
     ```
+  
+  * Sample data for testing the software can be downloaded from [here](https://drive.google.com/file/d/1Uu7yQ-w0gaVyW9mKN3d2nJR-ayZI_dya/view?usp=sharing)
 
   Example
   * Note that the dimension of the first and the second image has to be the same.
