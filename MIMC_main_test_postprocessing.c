@@ -1,5 +1,5 @@
 /*
-A main program to run single image matching.
+A main program to run the postprocessing only.
 */
 
 #ifndef _STDIO_H_

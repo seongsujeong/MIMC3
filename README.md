@@ -10,18 +10,25 @@ Code by Seongsu Jeong at the Ohio State University (now at University of Califor
 
 * Prerequisites and Dependency:
   * You will need a C compiler that supports OpenMP. GCC should do the compilation done.
-  * libtiff is necessary in order to build the MIMC3. The source code along with the instruction can be found at http://www.libtiff.org
+  * libtiff is necessary in order to build the MIMC3. The source code along with the instruction can be found at [here](http://www.libtiff.org)
 
-* Compilation command example:
-  * In shell:
+* Compilation and build command example:
+  * Making use of conda will simplify the installation procedure of the dependency.
+  * After installing the required library, try:
 
-  ```bash
-  gcc -fopenmp -O3 -g -o MIMC3 -I$HOME/miniconda3/include/ MIMC_main.c GMA.c georefimg.c MIMC_module.c MIMC_misc.c $HOME/miniconda3/lib/libtiff.dylib
-  ```
+    ```bash
+    gcc -fopenmp -O3 -g -o MIMC3 -I$CONDA_PREFIX/include/ MIMC_main.c GMA.c georefimg.c MIMC_module.c MIMC_misc.c $CONDA_PREFIX/lib/libtiff.dylib
+    ```
 
 * Usage:
-  * Add the path of libtiff.dylib (in case of mac) or libtiff.so (linux) to LD_LIBRARY_PATH in environment setting.
-  * MIMC3 [first image file] [second image file] [xyuvav file] [output directory]
+  * Add the path of `libtiff.dylib` (in case of mac) or `libtiff.so` (linux) to LD_LIBRARY_PATH in environment setting.
+  * Then, try:
+  
+    ```bash
+    MIMC3 [first tiff image] [second tiff image] [xyuvav file] [output directory]
+    ```
+
+  Example
   * Note that the dimension of the first and the second image has to be the same.
   * xyuvav is n-by-6 matrix that contains the grid location (image & map) as well as the *a priori* velocity information, that MIMC3 refers.
 
