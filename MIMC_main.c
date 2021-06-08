@@ -42,11 +42,11 @@ param param_mimc2;  //parameters that controlls the software
 GMA_float **kernel; //kernel for the convolution filter
 int main(int argc, char* argv[])
 {
-    char string_ver[]="3.0.5";
+    char string_ver[]="3.0.7";
 
     printf("\n\nMIMC version %s\n",string_ver);
-    printf("(C)Seongsu Jeong, Byrd Polar and Climate Research Center, The Ohio State University\n");
-    printf("Official MIMC website: iceflow.wordpress.com\n");
+    printf("(C)Seongsu Jeong, University of California, Irvine\n");
+    printf("https://github.com/seongsujeong/MIMC3\n");
     printf("Please address all the related concerns through the website above.\n\n");
 
     /*
