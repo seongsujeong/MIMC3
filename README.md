@@ -4,6 +4,7 @@ MIMC3
 Code by Seongsu Jeong at the Ohio State University (now at University of California, Irvine)
 
 * Algorithm
+  * The algorithm is to measure the suraface displacement of flowing ice, thereby the velocity. The key idea is to constrain the search area by *a priori* velocity data.
   * The algorithm implemented in here is described in a paper "Improved Multiple Matching Method for Observing Glacier Motion With Repeat Image Feature Tracking" by [Jeong et al in 2017](https://ieeexplore.ieee.org/document/7827084) at IEEE Transactions on Geoscience and Remote Sensing (DOI: 10.1109/TGRS.2016.2643699)
   * The video clip below is about how DLC works to find the matching point.
   ![DLC](docs/DLC_slow.mov)
