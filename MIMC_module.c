@@ -51,7 +51,7 @@ int get_offset_image(GMA_float *i0,GMA_float *i1,GMA_float **kernel, GMA_double 
     char flag_sucessful_ft_cp=0;
     num_dp=16;//temporary value; don't forget to revert this value to the original
     GMA_float **mvn_dp_cp_sub;
-    
+
     //determine the number of control points
     //printf("%f, %d\n",xyuvav->nrows*param_mimc2.ratio_cp, param_mimc2.num_cp_max);
     if(xyuvav->nrows*param_mimc2.ratio_cp > param_mimc2.num_cp_max)
@@ -121,26 +121,26 @@ int get_offset_image(GMA_float *i0,GMA_float *i1,GMA_float **kernel, GMA_double 
     }
     GMA_float_destroy(sarea_i0);
     GMA_float_destroy(sarea_i1);
-    
+
     //dump the flag_cp_candidate for the debugging purpose
     //GMA_uint8 *fcc=GMA_uint8_create(xyuvav->nrows,1);
     //fcc->data=flag_cp_candidate;
     //GMA_uint8_save("../MIMC2_C_GMA/flag_cp_candidate.GMA",fcc);
 
     printf("Completed: %d grids\n",num_cp_candidate);
-    
+
     if(num_cp_candidate<param_mimc2.num_cp_min)
     {
         printf("Failed to extract sufficient amount of CP candidates (%d<%d)\n",num_cp_candidate,param_mimc2.num_cp_min);
-        return -1;
+        //return -1;
     }
-    
+
     if(num_cp>num_cp_candidate)
     {
         num_cp=(int32_t)((float)num_cp_candidate*0.75);
         printf("Not too much CP candidates(%d) -  #CP threshold was adjusted to %d\n",num_cp_candidate,num_cp);
     }
-    
+
     //extract the CP grids from xyuvav
     cntrow1=0;
     xyuvav_cp=GMA_double_create(num_cp_candidate,7);
@@ -179,16 +179,16 @@ int get_offset_image(GMA_float *i0,GMA_float *i1,GMA_float **kernel, GMA_double 
 
     //randomly mix the order of the rows in xyuvav_cp
     GMA_double_randperm_row(xyuvav_cp);
-    
+
     //determine the range of the segment
     //TODO: soft-code the numver of the segments, so that each segments has the grids whose mumbers are almost same as the CP threshold
-    
+
     int32_t num_segment=(num_cp_candidate<param_mimc2.num_cp_min) ? 1 : num_cp_candidate/num_cp;
-    
+
     printf("# segments=%d\n",num_segment);
     array_index_segment=(int32_t*)malloc(sizeof(int32_t)*(num_segment+1));
     array_index_segment[0]=0;
-    
+
     for(cnt=1;cnt<=num_segment;cnt++)
     {
         array_index_segment[cnt]=(int32_t)(num_cp_candidate*((float)cnt/(float)num_segment));
@@ -204,7 +204,7 @@ int get_offset_image(GMA_float *i0,GMA_float *i1,GMA_float **kernel, GMA_double 
     //    char filename_xyuvav_sub[1024];
 
     for(cnt=0;cnt<num_segment;cnt++)
-    {   
+    {
         printf("CP measurement attempt: %d/%d - ",cnt+1,num_segment);
         int32_t num_grid_sub=array_index_segment[cnt+1]-array_index_segment[cnt];
 
@@ -213,10 +213,10 @@ int get_offset_image(GMA_float *i0,GMA_float *i1,GMA_float **kernel, GMA_double 
         {
             dp_cp_sub[cnt1]=GMA_float_create(num_grid_sub,3);
         }
-        
+
         //build up xyuvav_cp_sub
         xyuvav_cp_sub=GMA_double_create(num_grid_sub,7);
-        
+
         //printf("Extracting xyuvav of the segment\n");
         for(cnt1=0;cnt1<num_grid_sub;cnt1++)
         {
@@ -243,7 +243,7 @@ int get_offset_image(GMA_float *i0,GMA_float *i1,GMA_float **kernel, GMA_double 
         //build up the image chip array
         imgchip_i0=(GMA_float**)malloc(sizeof(GMA_float*)*num_grid_sub);
         imgchip_i1=(GMA_float**)malloc(sizeof(GMA_float*)*num_grid_sub);
-        
+
         //printf("Initiating CP image matching\n");
         for(cnt2=-1;cnt2<=2;cnt2++)  //index for kernel
         {
@@ -266,7 +266,7 @@ int get_offset_image(GMA_float *i0,GMA_float *i1,GMA_float **kernel, GMA_double 
                         }
                     }
                 }
-            
+
             }
             else
             {//convoluted image chips
@@ -291,7 +291,7 @@ int get_offset_image(GMA_float *i0,GMA_float *i1,GMA_float **kernel, GMA_double 
                     }
                     GMA_float_conv2(imgchip_i0_temp,kernel[cnt2],imgchip_i0_temp_out);
                     GMA_float_conv2(imgchip_i1_temp,kernel[cnt2],imgchip_i1_temp_out);
-                    
+
                     //copy the convoluted image chip to array
                     for(cntv=-ocw_chip;cntv<=ocw_chip;cntv++)
                     {
@@ -314,7 +314,7 @@ int get_offset_image(GMA_float *i0,GMA_float *i1,GMA_float **kernel, GMA_double 
                 GMA_float_save(filename_xyuvav_sub,imgchip_i0[flag_is362273]);
                 sprintf(filename_xyuvav_sub,"../MIMC2_C_GMA/i1chip_%d.GMA",cnt2+1);
                 GMA_float_save(filename_xyuvav_sub,imgchip_i1[flag_is362273]);
-                
+
             }*/
 
             // image chip build complete. Proceeding to the image matching
@@ -325,7 +325,7 @@ int get_offset_image(GMA_float *i0,GMA_float *i1,GMA_float **kernel, GMA_double 
             for(cnt3=1;cnt3<3;cnt3++)//counter for ocw
             {
                 ocw_refchip=param_mimc2.vec_ocw[cnt3];
-                
+
                 //printf("ocw=%d, kernel=%d\n",cnt3,cnt2);
                 //printf("%d...",cnt3+(cnt2-1)*2);
                 //printf("...%d",(cnt3-1)*4+cnt2+1);
@@ -344,9 +344,9 @@ int get_offset_image(GMA_float *i0,GMA_float *i1,GMA_float **kernel, GMA_double 
                                 refchip->val[ocw_refchip+cntv][ocw_refchip+cntu]=imgchip_i0[cnt1]->val[ocw_chip+cntv][ocw_chip+cntu];
                             }
                         }
-                
+
                         //prepare for the sarea from i1 -> imgchip_i1[cnt1]
-                    
+
                         //perform feature tracking
                         find_ncc_peak(refchip, imgchip_i1[cnt1], uv_pivot_cp, uvncc_cp);
                         dp_cp_sub[(cnt3-1)*8+(cnt2+1)*2]->val[cnt1][0]=uvncc_cp[0];
@@ -363,7 +363,7 @@ int get_offset_image(GMA_float *i0,GMA_float *i1,GMA_float **kernel, GMA_double 
                             }
                         }
                         //prepare for the sarea from i0 -> imgchip_i0[cnt1]
-                    
+
                         //perform feature tracking
                         //NOTE: No need to reverse the nc_pivot_cp (rectangular-shaped distribution)
                         find_ncc_peak(refchip, imgchip_i0[cnt1], uv_pivot_cp, uvncc_cp);
@@ -371,7 +371,7 @@ int get_offset_image(GMA_float *i0,GMA_float *i1,GMA_float **kernel, GMA_double 
                         dp_cp_sub[(cnt3-1)*8+(cnt2+1)*2+1]->val[cnt1][1]=-uvncc_cp[1];
                         dp_cp_sub[(cnt3-1)*8+(cnt2+1)*2+1]->val[cnt1][2]=uvncc_cp[2];
 
-                        
+
                     }//for(cnt1=0;cnt1<num_grid_sub;cnt1++)
                     GMA_float_destroy(refchip);
                 }//#pragma omp parallel private(refchip,cntv,cntu,uvncc_cp) shared(dp_cp_sub)
@@ -382,7 +382,7 @@ int get_offset_image(GMA_float *i0,GMA_float *i1,GMA_float **kernel, GMA_double 
                 GMA_float_destroy(imgchip_i0[cnt1]);
                 GMA_float_destroy(imgchip_i1[cnt1]);
             }
-            
+
         }//for(cnt2=-1;cnt2<=2;cnt2++)//counter for the kernel
         //printf("\n");
         //cluster the dp_cp_sub
@@ -428,7 +428,7 @@ int get_offset_image(GMA_float *i0,GMA_float *i1,GMA_float **kernel, GMA_double 
             GMA_double_destroy(xyuvav_cp_sub);
             printf("#CP found so far: %d\n",num_cp_current);
         }
-        
+
         //TODO: dp_cp_sub might be leak
 
         for(cnt1=0;cnt1<16;cnt1++)  //NOTE: the "16" means the # of matching attempts per grid in CP measurement
@@ -440,7 +440,7 @@ int get_offset_image(GMA_float *i0,GMA_float *i1,GMA_float **kernel, GMA_double 
 
     }//for(cnt=0;cnt<20;cnt++)
     free(array_index_segment);
-    
+
 
     //Consider the image pair to be valid if if has more CPs than (or equal to) the least number of thresholds
     if(num_cp_current<num_cp && num_cp_current>=param_mimc2.num_cp_min)
@@ -483,7 +483,7 @@ int get_offset_image(GMA_float *i0,GMA_float *i1,GMA_float **kernel, GMA_double 
     //deallocate the variables
     GMA_double_destroy(xyuvav_cp);
     GMA_int32_destroy(uv_pivot_cp);
-    
+
     //free(flag_cp);
 
     //revert the original value of num_dp;
@@ -492,7 +492,7 @@ int get_offset_image(GMA_float *i0,GMA_float *i1,GMA_float **kernel, GMA_double 
 }
 
 void GMA_double_randperm_row(GMA_double *var)
-{   
+{
     GMA_double *var_temp=GMA_double_create(var->nrows,var->ncols);
 
     int32_t cntrow,cntcol;
@@ -501,7 +501,7 @@ void GMA_double_randperm_row(GMA_double *var)
     double N_A_N=sqrt(-1.0);
 
     var_temp=GMA_double_create(var->nrows,var->ncols);
-    
+
     //duplicate the input GMA array. Also empty rhe
     for(cntrow=0;cntrow<var->nrows;cntrow++)
     {
@@ -511,10 +511,10 @@ void GMA_double_randperm_row(GMA_double *var)
             var->val[cntrow][cntcol]=N_A_N;
         }
     }
-    
+
     //deterimne the vector of the row order
     srand(time(NULL));
-    
+
     for(limit_idx_row=var_temp->nrows-1;limit_idx_row>=0;limit_idx_row--)
     {
         //determine the ID to put
@@ -526,7 +526,7 @@ void GMA_double_randperm_row(GMA_double *var)
         {
             idx_row=0;
         }
-        
+
         for(cntcol=0;cntcol<var->ncols;cntcol++)
         {
             var->val[limit_idx_row][cntcol]=var_temp->val[idx_row][cntcol];
@@ -542,7 +542,7 @@ void GMA_double_randperm_row(GMA_double *var)
 
 GMA_int32** get_uv_pivot(GMA_double *xyuvav, float dt, param param_mimc2, int32_t ocw, GMA_float *i1)
 {   //TODO make this module more efficient
-    
+
     //unsigned int numgrid=xyuvav->nrows;
     int32_t cnt,cnt1;
     int32_t num_pivot;
@@ -583,7 +583,7 @@ GMA_int32** get_uv_pivot(GMA_double *xyuvav, float dt, param param_mimc2, int32_
             u+=incr_u;
             v+=incr_v;
         }
-        
+
         u=0.0;
         v=0.0;
         out[cnt]=GMA_int32_create(num_pivot,2);
@@ -610,7 +610,7 @@ char investigate_valid_grid(GMA_float *refchip,GMA_float *sarea)
     int32_t cntu,cntv;
     float numpx_refchip,numpx_sarea;
     float max_ratio_invalid=0.8;
-    
+
     numpx_refchip=(float)(refchip->nrows*refchip->ncols);
     numpx_sarea=(float)(sarea->nrows*sarea->ncols);
 
@@ -631,7 +631,7 @@ char investigate_valid_grid(GMA_float *refchip,GMA_float *sarea)
             if(sarea->val[cntv][cntu]<MIN_DN) num_invalid_sarea++;
         }
     }
-    
+
     if((float)num_invalid_refchip/numpx_refchip>max_ratio_invalid || (float)num_invalid_sarea/numpx_sarea>max_ratio_invalid)
     {
         out=0;
@@ -668,11 +668,11 @@ void find_ncc_peak(GMA_float *refchip, GMA_float *sarea, GMA_int32 *uv_pivot, fl
     ocw=(int)(refchip->nrows)/2;
     uv_peak[0]=dx2;
     uv_peak[1]=dy2;
-        
+
     uvncc[0]=0.0;
     uvncc[1]=0.0;
     uvncc[2]=-2.0;
-    
+
     //create cmap and sarea
     cmap=GMA_float_create(Dy2,Dx2);
     for(cnt1=-dx2;cnt1<dx2;cnt1++)  //TODO: re-think about the loop boundary
@@ -697,7 +697,7 @@ void find_ncc_peak(GMA_float *refchip, GMA_float *sarea, GMA_int32 *uv_pivot, fl
             duv[1]=-1;
             flag_newncc=1;  //fake values to get into the while loop
             while((duv[0]!=0||duv[1]!=0)&&flag_newncc!=0)
-            {   
+            {
                 duv[0]=0;
                 duv[1]=0;
                 if(pivot[0]-ocw<=1 || pivot[0]+ocw>=Dx2-1 || pivot[1]-ocw<=1 || pivot[1]+ocw>=Dy2-1)  //boundary check
@@ -734,7 +734,7 @@ void find_ncc_peak(GMA_float *refchip, GMA_float *sarea, GMA_int32 *uv_pivot, fl
 						    cmap->val[pivot[1]+cnt2][pivot[0]+cnt1]=(float)((nsample*sxy-sx*sy)/sqrt((nsample*sxx-sx*sx)*(nsample*syy-sy*sy))); //ncc calculation in spatial domain
                         }
                         if(cmap->val[pivot[1]+cnt2][pivot[0]+cnt1] > nccmax)
-                        { 
+                        {
                             nccmax=cmap->val[pivot[1]+cnt2][pivot[0]+cnt1];
                             duv[0]=cnt1;
                             duv[1]=cnt2;
@@ -753,7 +753,7 @@ void find_ncc_peak(GMA_float *refchip, GMA_float *sarea, GMA_int32 *uv_pivot, fl
         }   //peak location along with the NCC is now at the array uvncc
 
         // quadratic fitting of the NCC peak
-        
+
         ncc9[0]=cmap->val[uv_peak[1]-1][uv_peak[0]-1];
         ncc9[1]=cmap->val[uv_peak[1]-1][uv_peak[0]];
         ncc9[2]=cmap->val[uv_peak[1]-1][uv_peak[0]+1];
@@ -764,7 +764,7 @@ void find_ncc_peak(GMA_float *refchip, GMA_float *sarea, GMA_int32 *uv_pivot, fl
         ncc9[7]=cmap->val[uv_peak[1]+1][uv_peak[0]];
         ncc9[8]=cmap->val[uv_peak[1]+1][uv_peak[0]+1];
         //TODO: deal with the case that the peak is at the edges of the cmap
-        
+
         //printf("Calculating Coefficients...");
         coeff_poly[0]=6*ncc9[0] -12*ncc9[1] +6*ncc9[2] +6*ncc9[3] -12*ncc9[4] +6*ncc9[5] +6*ncc9[6] -12*ncc9[7] +6*ncc9[8];
         coeff_poly[1]=9*ncc9[0] -9*ncc9[2] -9*ncc9[6] +9*ncc9[8];
@@ -786,16 +786,16 @@ void find_ncc_peak(GMA_float *refchip, GMA_float *sarea, GMA_int32 *uv_pivot, fl
         uvncc[1]/=4*coeff_poly[0]*coeff_poly[2]-coeff_poly[1]*coeff_poly[1];
         uvncc[0]+=(float)(uv_peak[0]-dx2);
         uvncc[1]+=(float)(uv_peak[1]-dy2);
-        
+
         //TODO: also calculate fitted NCC peak value if there is no significant computation resource usage
         //TODO: Cancel the sub-pixel interpolation if the fitting result goes too far from the original peak result
         //printf("Successful! - [%f, %f]\n\n",uvncc[0],uvncc[1]);
-        
-        
+
+
     }
     GMA_float_destroy(cmap);
     //printf("\n");
-    
+
 
 
 }
@@ -813,7 +813,7 @@ GMA_float* matching_ncc_dlc_2(GMA_float *i0,GMA_float *i1,GMA_double *xyuvav,int
     int32_t cnt1,cnt2,cnt3,cnt4;
 
     //refchip=GMA_float_create((unsigned int)ocw*2+1,(unsigned int)ocw*2+1);
-    #pragma omp parallel private(uv0,uvncc,refchip,sarea) shared(out) 
+    #pragma omp parallel private(uv0,uvncc,refchip,sarea) shared(out)
     {
         refchip=GMA_float_create(ocw*2+1,ocw*2+1);
         #pragma omp for schedule(dynamic)
@@ -826,13 +826,13 @@ GMA_float* matching_ncc_dlc_2(GMA_float *i0,GMA_float *i1,GMA_double *xyuvav,int
 
             uv0[0]+=offset[0];
             uv0[1]+=offset[1];
-            
+
             sarea=extract_sarea(i1, uv0, ocw, uv_pivot[cnt_grid]);
             find_ncc_peak(refchip, sarea, uv_pivot[cnt_grid], uvncc);
             out->val[cnt_grid][0]=uvncc[0];
             out->val[cnt_grid][1]=uvncc[1];
             out->val[cnt_grid][2]=uvncc[2];
-            
+
             GMA_float_destroy(sarea);
 
         }
@@ -882,8 +882,8 @@ GMA_float* extract_sarea(GMA_float *i1, int32_t *uv0, int32_t ocw, GMA_int32 *uv
             {
                 sarea->val[cnt2+dy2][cnt1+dx2]=0.0;
             }
-            
-        } 
+
+        }
     }
 
     return sarea;
@@ -913,9 +913,9 @@ GMA_float** mimc2_postprocess(GMA_float **dp, GMA_double *xyuvav, float dt)
     dpf0=get_dpf0(mvn_dp,0.6);      //TODO: soft-code the threshold
     printf("Successful\n\n");
 
-    //GMA_int32_save("../MIMC2_C_GMA/dpf0.GMA",dpf0);    //for checking the result 
+    //GMA_int32_save("../MIMC2_C_GMA/dpf0.GMA",dpf0);    //for checking the result
     //Debug code
-    
+
     printf("Calculating meighboring grid mask for dpf2\n");
     ruv_neighbor=get_ruv_neighbor(xyuvav,param_mimc2.radius_neighbor_dpf1);
     printf("Successful: %d neignboring grids\n\n",ruv_neighbor->nrows);
@@ -923,7 +923,7 @@ GMA_float** mimc2_postprocess(GMA_float **dp, GMA_double *xyuvav, float dt)
     printf("Calculating initial most probable displacements (dpf2)\n");
     dpf_dx=GMA_float_create(dimy_vmap,dimx_vmap);
     dpf_dy=GMA_float_create(dimy_vmap,dimx_vmap);
-    
+
     get_dpf1(dpf0,dpf_dx,dpf_dy,ruv_neighbor,mvn_dp,xyuvav);
     printf("Successful\n\n");
 
@@ -941,9 +941,9 @@ GMA_float** mimc2_postprocess(GMA_float **dp, GMA_double *xyuvav, float dt)
     vxyexyqual[2]=GMA_float_create(dimy_vmap,dimx_vmap);    //ex
     vxyexyqual[3]=GMA_float_create(dimy_vmap,dimx_vmap);    //ey
     vxyexyqual[4]=GMA_float_create(dimy_vmap,dimx_vmap);    //qual
-    
+
     printf("checkpoint 1\n");
-    
+
     int32_t cntv,cntu;
     int32_t id_vec;
     int32_t id_cluster;
@@ -1010,7 +1010,7 @@ GMA_float** calc_mean_var_num_dp_cluster(GMA_float** dp,int32_t num_dpoi)
     //syy=malloc(sizeof(float)*num_dpoi);
     //nsample=malloc(sizeof(int)*num_dpoi);
 
-    
+
     float min_dist=0.5; //TODO: soft-code this
 
     //printf("Allocating output values\n");
@@ -1068,7 +1068,7 @@ GMA_float** calc_mean_var_num_dp_cluster(GMA_float** dp,int32_t num_dpoi)
                 max_id=id_cluster.val[cnt_dp][0];
             }
         }
-        
+
         out[cnt_grid]=GMA_float_create(max_id,5);
         for(cnt_dp=0;cnt_dp<max_id;cnt_dp++)
         {
@@ -1078,7 +1078,7 @@ GMA_float** calc_mean_var_num_dp_cluster(GMA_float** dp,int32_t num_dpoi)
             syy[cnt_dp]=0;
             nsample[cnt_dp]=0;
         }
-        
+
         //[1111111, 2222222, 333333, 444444, 5555555555]
         //[mean_vx, mean_vy, var_vx, var_vy, num_sample]
         for(cnt_dp=0;cnt_dp<id_cluster.nrows;cnt_dp++)
@@ -1101,7 +1101,7 @@ GMA_float** calc_mean_var_num_dp_cluster(GMA_float** dp,int32_t num_dpoi)
                                           -out[cnt_grid]->val[cnt_dp][1]*out[cnt_grid]->val[cnt_dp][1];  //var vy
             out[cnt_grid]->val[cnt_dp][4]=(float)nsample[cnt_dp]/(float)num_dpoi;  //# of samples
         }
-        
+
         //TODO: Consider the way about reducing the overhead from memory allocation/deallocation
     }
 
@@ -1113,7 +1113,7 @@ GMA_float** calc_mean_var_num_dp_cluster(GMA_float** dp,int32_t num_dpoi)
         free(dp_stack.val[cnt_dp]);
     }
     free(dp_stack.val);
-    
+
     //deallocate id_cluster
     for(cnt_dp=0;cnt_dp<num_dpoi;cnt_dp++)
     {
@@ -1208,7 +1208,7 @@ GMA_uint8* get_mask_nomatching(GMA_float **mvn_dp)
             if(mvn_dp[cntvec]->nrows==0)
             {
                 out->val[cntv][cntu]=1;
-                
+
             }
             else
             {
@@ -1229,7 +1229,7 @@ GMA_int32* get_dpf0(GMA_float **mvn_dp, float min_matching_ratio)   //to get the
     //output value description
     //out: [dimy_vmap][dimx_vmap] GMA_int32. Each cell contains the cluster ID of the DPF0
     //     The cell value is -1 (or less than zero) if there isn`t any corresponding cluster
-    
+
     int32_t cnt_grid,cnt_cluster;
     int32_t cntx,cnty;
     uint8_t flag_assigned;
@@ -1259,7 +1259,7 @@ GMA_int32* get_dpf0(GMA_float **mvn_dp, float min_matching_ratio)   //to get the
     }
     //GMA_int32_save("../MIMC2_C_GMA/dpf0.GMA",out);
     return out;
-    
+
 }
 
 
@@ -1288,7 +1288,7 @@ GMA_int32* get_ruv_neighbor(GMA_double *xyuvav,float radius_neighbor)
             field_y->val[cntv][cntu]=xyuvav->val[cntv*dimx_vmap][1];
         }
     }
-    
+
     cx=field_x->val[cv][cu];
     cy=field_y->val[cv][cu];
 
@@ -1341,10 +1341,10 @@ void get_dpf1(GMA_int32 *dpf0, GMA_float *dpf_dx, GMA_float *dpf_dy, GMA_int32 *
     float sum_mag,sq_dist,sq_dist_closest;
     char buffer_filename[2048];
 
-    
+
     dx_buffer=GMA_float_create(dimy_vmap,dimx_vmap);
     dy_buffer=GMA_float_create(dimy_vmap,dimx_vmap);
-    
+
     mtrx_noi=GMA_float_create(dimy_vmap,dimx_vmap);
     for(cntv=0;cntv<dimy_vmap;cntv++)
     {
@@ -1354,10 +1354,10 @@ void get_dpf1(GMA_int32 *dpf0, GMA_float *dpf_dx, GMA_float *dpf_dy, GMA_int32 *
         }
     }
 
-    
+
 
     //vec_ruv_w_scale_mag=GMA_float_create(ruv_neighbor->nrows,4);
-    
+
     //reconstruct dpf_dx and dpf_dy. Also initialize the dx_buffer and dy_buffer
     for(cntv=0;cntv<dimy_vmap;cntv++)
     {
@@ -1378,7 +1378,7 @@ void get_dpf1(GMA_int32 *dpf0, GMA_float *dpf_dx, GMA_float *dpf_dy, GMA_int32 *
             dy_buffer->val[cntv][cntu]=N_A_N;
         }
     }
-    
+
     //debugging code
     //GMA_float_save("/Users/seongsu/Desktop/bad_vmaptar_example/dpf0_gx.gma",dpf_dx);
     //GMA_float_save("/Users/seongsu/Desktop/bad_vmaptar_example/dpf0_gy.gma",dpf_dy);
@@ -1396,14 +1396,14 @@ void get_dpf1(GMA_int32 *dpf0, GMA_float *dpf_dx, GMA_float *dpf_dy, GMA_int32 *
             thres_weight-=0.02;
             num_processed=1;
             while(num_processed!=0)
-            {   
+            {
                 NOI++;
                 num_processed=0;
                 //#pragma omp parallel private(cnt_grid,id_cluster,num_grid_neighbor,uvoi, vec_ruv_w_scale_mag, dpe, dxy_neighbor, dxy, sq_dist, sq_dist_closest, sum_mag) \
                                        shared(dpf0, dpf_dx, dpf_dy, ruv_neighbor, mvn_dp, xyuvav, dx_buffer, dy_buffer, N_A_N)
                 // {
-                vec_ruv_w_scale_mag=GMA_float_create(ruv_neighbor->nrows,7);    
-                //#pragma omp for schedule(dynamic) collapse(2) 
+                vec_ruv_w_scale_mag=GMA_float_create(ruv_neighbor->nrows,7);
+                //#pragma omp for schedule(dynamic) collapse(2)
                 for(cntv=0;cntv<dimy_vmap;cntv++)
                 {   //loop around the array and process if the visited grid needs to
                     for(cntu=0;cntu<dimx_vmap;cntu++)
@@ -1441,7 +1441,7 @@ void get_dpf1(GMA_int32 *dpf0, GMA_float *dpf_dx, GMA_float *dpf_dy, GMA_int32 *
                                         //                                             /(apv_neighbor[0]*apv_neighbor[0]+apv_neighbor[1]*apv_neighbor[1]));//scale factor
                                         vec_ruv_w_scale_mag->val[num_grid_neighbor][3]=vec_ruv_w_scale_mag->val[num_grid_neighbor][4]
                                                                                         /sqrt(apv_neighbor[0]*apv_neighbor[0]+apv_neighbor[1]*apv_neighbor[1]);//scale factor
-                                        
+
                                         //vec_ruv_w_scale_mag->val[num_grid_neighbor][3]=sqrt(dxy_neighbor[0]*dxy_neighbor[0]+dxy_neighbor[1]*dxy_neighbor[1])-
                                         //                                         sqrt(apv_neighbor[0]*apv_neighbor[0]+apv_neighbor[1]*apv_neighbor[1]);//Residuals
                                         //vec_ruv_w_scale_mag->val[num_grid_neighbor][3]=sqrt((dxy_neighbor[0]-apv_neighbor[0])*(dxy_neighbor[0]-apv_neighbor[0])+(dxy_neighbor[1]-apv_neighbor[1])*(dxy_neighbor[1]-apv_neighbor[1]));
@@ -1449,10 +1449,10 @@ void get_dpf1(GMA_int32 *dpf0, GMA_float *dpf_dx, GMA_float *dpf_dy, GMA_int32 *
                                     }
                                 }
                             }
-                    
+
                             if(num_grid_neighbor>=thres_num_grid_neighbor)
                             {//Enough neighboring samples. perform the interpolation
-                                
+
                                 float w_min=1E+37;
                                 float w_max=-1E+37;
                                 float max_noi=1.0;
@@ -1466,7 +1466,7 @@ void get_dpf1(GMA_int32 *dpf0, GMA_float *dpf_dx, GMA_float *dpf_dy, GMA_int32 *
                                     float mag_dxy=sqrt(dxy[0]*dxy[0]+dxy[1]*dxy[1]);
                                     float w_candidate=(dpe[0]*dxy[0]+dpe[1]*dxy[1])/(mag_dpe*mag_dxy);
                                     w_candidate=w_candidate>0?w_candidate:-w_candidate;
-                                    
+
                                     //cut off if the inner product is less than the threshold
                                     //TODO: consider distance to determine the weight
                                     //Might be better to make LUT when calculating the ruv
@@ -1517,7 +1517,7 @@ void get_dpf1(GMA_int32 *dpf0, GMA_float *dpf_dx, GMA_float *dpf_dy, GMA_int32 *
                                     sum_mag_times_w+=vec_ruv_w_scale_mag->val[cnt_neighbor][2]*vec_ruv_w_scale_mag->val[cnt_neighbor][3]*w2;
                                     sum_w+=vec_ruv_w_scale_mag->val[cnt_neighbor][2];
                                     //sum_w2+=vec_ruv_w_scale_mag->val[cnt_neighbor][2]*w2;
-                                    
+
 
                                     //debug code
                                     if(cntu==15 && cntv==30)
@@ -1543,14 +1543,14 @@ void get_dpf1(GMA_int32 *dpf0, GMA_float *dpf_dx, GMA_float *dpf_dy, GMA_int32 *
                                     printf("sum_w2=%f\n",sum_w2);
                                 }
                                     //end of the debugging code
-                                
+
                                 if(sum_w>=1.0)
                                 {
                                     //float factor_mag=sum_mag_times_w/sum_w;
                                     //float factor_mag=sum_mag_times_w/sum_w2;
                                     //dx_buffer->val[cntv][cntu]=dpe[0]*factor_mag;
                                     //dy_buffer->val[cntv][cntu]=dpe[1]*factor_mag;
-                                    
+
                                     //float factor_mag=1.0+sum_mag_times_w/sum_w/mag_dpe;
                                     //dx_buffer->val[cntv][cntu]=dpe[0]*factor_mag;
                                     //dy_buffer->val[cntv][cntu]=dpe[1]*factor_mag;
@@ -1563,7 +1563,7 @@ void get_dpf1(GMA_int32 *dpf0, GMA_float *dpf_dx, GMA_float *dpf_dy, GMA_int32 *
                                     num_processed++;
                                 }
 
-                                
+
 
 
                             }//if(num_grid_neighbor>=5)
@@ -1572,7 +1572,7 @@ void get_dpf1(GMA_int32 *dpf0, GMA_float *dpf_dx, GMA_float *dpf_dy, GMA_int32 *
                 }//for(cntv=0;cntv<dimy_vmap;cntv++)
                 GMA_float_destroy(vec_ruv_w_scale_mag);
                 //}//#pragma omp parallel private....
-                
+
                 //put the interpolated values in the buffer to dpf_dx and dpf_dy
                 for(cntv=0;cntv<dimy_vmap;cntv++)
                 {
@@ -1592,7 +1592,7 @@ void get_dpf1(GMA_int32 *dpf0, GMA_float *dpf_dx, GMA_float *dpf_dy, GMA_int32 *
                 //sprintf(buffer_filename,"/Users/seongsu/Desktop/bad_vmaptar_example/dpf2_dy_%02d.GMA",NOI);
                 //GMA_float_save(buffer_filename,dpf_dy);
             }//while(num_processed!=0)
-    
+
             //scan through the dpf0 and see if there is any grid that does not have corresponding clusters
             num_grid_unprocessed=0;
             for(cntv=0;cntv<dimy_vmap;cntv++)
@@ -1641,7 +1641,7 @@ void get_dpf1(GMA_int32 *dpf0, GMA_float *dpf_dx, GMA_float *dpf_dy, GMA_int32 *
                             sum_dy+=dpf_dy->val[cntv+dv][cntu+du];
                             num_disp=num_disp+1;
                         }
-                        
+
                     }
                 }
                 dx_buffer->val[cntv][cntu]=sum_dx/num_disp;
@@ -1673,7 +1673,7 @@ void get_dpf1(GMA_int32 *dpf0, GMA_float *dpf_dx, GMA_float *dpf_dy, GMA_int32 *
 
 
 
-    
+
     printf("dpf2 approximation successful. proceeding to final adjustment\n");
 
     //put mean cluster dps and IDs closest to the interpolated displacements
@@ -1729,11 +1729,11 @@ void get_dpf1_original(GMA_int32 *dpf0, GMA_float *dpf_dx, GMA_float *dpf_dy, GM
     float sum_mag,sq_dist,sq_dist_closest;
     char buffer_filename[2048];
 
-    
+
     dx_buffer=GMA_float_create(dimy_vmap,dimx_vmap);
     dy_buffer=GMA_float_create(dimy_vmap,dimx_vmap);
     //vec_ruv_w_scale_mag=GMA_float_create(ruv_neighbor->nrows,4);
-    
+
     //reconstruct dpf_dx and dpf_dy. Also initialize the dx_buffer and dy_buffer
     for(cntv=0;cntv<dimy_vmap;cntv++)
     {
@@ -1768,14 +1768,14 @@ void get_dpf1_original(GMA_int32 *dpf0, GMA_float *dpf_dx, GMA_float *dpf_dy, GM
         thres_weight-=0.02;
         num_processed=1;
         while(num_processed!=0)
-        {   
+        {
             NOI++;
             num_processed=0;
             //#pragma omp parallel private(cnt_grid,id_cluster,num_grid_neighbor,uvoi, vec_ruv_w_scale_mag, dpe, dxy_neighbor, dxy, sq_dist, sq_dist_closest, sum_mag) \
                                             shared(dpf0, dpf_dx, dpf_dy, ruv_neighbor, mvn_dp, xyuvav, dx_buffer, dy_buffer, N_A_N)
            // {
-            vec_ruv_w_scale_mag=GMA_float_create(ruv_neighbor->nrows,4);    
-            //#pragma omp for schedule(dynamic) collapse(2) 
+            vec_ruv_w_scale_mag=GMA_float_create(ruv_neighbor->nrows,4);
+            //#pragma omp for schedule(dynamic) collapse(2)
             for(cntv=0;cntv<dimy_vmap;cntv++)
             {   //loop around the array and process if the visited grid needs to
                 for(cntu=0;cntu<dimx_vmap;cntu++)
@@ -1795,14 +1795,14 @@ void get_dpf1_original(GMA_int32 *dpf0, GMA_float *dpf_dx, GMA_float *dpf_dy, GM
                             {
                                 dxy_neighbor[0]=dpf_dx->val[uvoi[1]][uvoi[0]];
                                 dxy_neighbor[1]=dpf_dy->val[uvoi[1]][uvoi[0]];
-                                
-                                
-                                
+
+
+
                                 if(!isnan(dxy_neighbor[0]) && !isnan(dxy_neighbor[1]))
                                 {
                                     apv_neighbor[0]=(float)(xyuvav->val[uvoi[1]*dimx_vmap+uvoi[0]][4])/365*dt/param_mimc2.mpp;
                                     apv_neighbor[1]=-(float)(xyuvav->val[uvoi[1]*dimx_vmap+uvoi[0]][5])/365*dt/param_mimc2.mpp;
-                                
+
                                     vec_ruv_w_scale_mag->val[num_grid_neighbor][0]=(float)ruv_neighbor->val[cnt_neighbor][0];//relative u coordinate
                                     vec_ruv_w_scale_mag->val[num_grid_neighbor][1]=(float)ruv_neighbor->val[cnt_neighbor][1];//relative v coordinate
                                     //vec_ruv_w_scale_mag->val[num_grid_neighbor][3]=sqrt(dxy_neighbor[0]*dxy_neighbor[0]+dxy_neighbor[1]*dxy_neighbor[1]);//magnitude
@@ -1818,7 +1818,7 @@ void get_dpf1_original(GMA_int32 *dpf0, GMA_float *dpf_dx, GMA_float *dpf_dy, GM
                                 }
                             }
                         }
-                    
+
                         if(num_grid_neighbor>=5)
                         {//Enough neighboring samples. perform the interpolation
                             //normalize dpe
@@ -1846,11 +1846,11 @@ void get_dpf1_original(GMA_int32 *dpf0, GMA_float *dpf_dx, GMA_float *dpf_dy, GM
                                 {
                                     w_candidate=-w_candidate;
                                 }
-                            
+
                                 if(w_candidate >= thres_weight ) //dot product
                                 {
                                     vec_ruv_w_scale_mag->val[cnt_neighbor][2]=w_candidate;
-                                    
+
                                     //check the min/max
                                     if(vec_ruv_w_scale_mag->val[cnt_neighbor][3]>w_max)
                                     {
@@ -1916,7 +1916,7 @@ void get_dpf1_original(GMA_int32 *dpf0, GMA_float *dpf_dx, GMA_float *dpf_dy, GM
             //printf("%s\n",buffer_filename);
             GMA_float_save(buffer_filename,dpf_dy);
         }//while(num_processed!=0)
-    
+
         //scan through the dpf0 and see if there is any grid that does not have corresponding clusters
         num_grid_unprocessed=0;
         for(cntv=0;cntv<dimy_vmap;cntv++)
@@ -1936,9 +1936,9 @@ void get_dpf1_original(GMA_int32 *dpf0, GMA_float *dpf_dx, GMA_float *dpf_dy, GM
 
     //GMA_float_save("../MIMC2_C_GMA/dpf2_dx_interp.GMA",dpf_dx);
     //GMA_float_save("../MIMC2_C_GMA/dpf2_dy_interp.GMA",dpf_dy);
-    
 
-    
+
+
 
     printf("dpf2 approximation successful. proceeding to final adjustment\n");
 
@@ -2002,7 +2002,7 @@ void get_dpf_pseudosmoothing(GMA_int32 *dpf,GMA_float *dpf_dx, GMA_float *dpf_dy
 
     eigvel[0]=1500.0/300.0;
     eigvel[1]=eigvel[0]/3.0;
-    
+
     //determine the initial values of mask_investigate and mask_investigate_next
     printf("Initializing the layer array\n");
     mask_investigate_layer=(GMA_uint8**)malloc(2*sizeof(GMA_uint8*));
@@ -2012,13 +2012,13 @@ void get_dpf_pseudosmoothing(GMA_int32 *dpf,GMA_float *dpf_dx, GMA_float *dpf_dy
     mask_investigate_next=mask_investigate_layer[1];
     GMA_float **dxy_ps_buffer;
     GMA_int32 *dpf_ps_buffer;
-    
+
     uv_neighbor=GMA_int32_create(ruv_neighbor->nrows,ruv_neighbor->ncols);
     duv_neighbor=GMA_double_create(ruv_neighbor->nrows,ruv_neighbor->ncols);
     uvoi=GMA_double_create(1,2);
     w=GMA_double_create(ruv_neighbor->nrows,1);
     duv_interp=GMA_double_create(1,2);
-    
+
     dxy_ps_buffer=malloc(2*sizeof(GMA_float*));
     dxy_ps_buffer[0]=GMA_float_create(dimy_vmap,dimx_vmap);
     dxy_ps_buffer[1]=GMA_float_create(dimy_vmap,dimx_vmap);
@@ -2029,7 +2029,7 @@ void get_dpf_pseudosmoothing(GMA_int32 *dpf,GMA_float *dpf_dx, GMA_float *dpf_dy
     for(cntv=0;cntv<dimy_vmap;cntv++)
     {
         for(cntu=0;cntu<dimx_vmap;cntu++)
-        {   
+        {
             idx_vec_corr=cntv*dimx_vmap+cntu;
             id_cluster=dpf->val[cntv][cntu];
             if(id_cluster<0)
@@ -2040,7 +2040,7 @@ void get_dpf_pseudosmoothing(GMA_int32 *dpf,GMA_float *dpf_dx, GMA_float *dpf_dy
             {
                 if(mvn_dp[idx_vec_corr]->val[id_cluster][4]>=0.6)
                 {
-                    
+
                     mask_investigate->val[cntv][cntu]=0;
                 }
                 else
@@ -2055,7 +2055,7 @@ void get_dpf_pseudosmoothing(GMA_int32 *dpf,GMA_float *dpf_dx, GMA_float *dpf_dy
     }
 
     //GMA_uint8_save("../MIMC2_C_GMA/mask_investigate.GMA",mask_investigate);
-    
+
     printf("Allocating mask stack\n");
     //allocate stack_mask_investigate
     stack_mask_investigate=(GMA_uint8 **)malloc(max_iter*sizeof(GMA_uint8*));
@@ -2110,7 +2110,7 @@ void get_dpf_pseudosmoothing(GMA_int32 *dpf,GMA_float *dpf_dx, GMA_float *dpf_dy
                         int32_t uvoi_neighbor[2];
                         uvoi_neighbor[0]=cntu+ruv_neighbor->val[cntn][0];
                         uvoi_neighbor[1]=cntv+ruv_neighbor->val[cntn][1];
-                        
+
                         if(uvoi_neighbor[0]>=0 && uvoi_neighbor[0]<dimx_vmap && //boundary check
                            uvoi_neighbor[1]>=0 && uvoi_neighbor[1]<dimy_vmap &&
                            !isnan(dpf_dx->val[uvoi_neighbor[1]][uvoi_neighbor[0]]) &&
@@ -2127,7 +2127,7 @@ void get_dpf_pseudosmoothing(GMA_int32 *dpf,GMA_float *dpf_dx, GMA_float *dpf_dy
                     uv_neighbor->nrows=num_neighbor;
                     duv_neighbor->nrows=num_neighbor;
                     w->nrows=num_neighbor;
-                    
+
                     if(num_neighbor>=10) // Enough number of neighboring grids
                     {
                         //printf("Enough number of neighboring displacements found: %d>=10\n",num_neighbor);
@@ -2145,7 +2145,7 @@ void get_dpf_pseudosmoothing(GMA_int32 *dpf,GMA_float *dpf_dx, GMA_float *dpf_dy
                         ITM[1]=((eigvel[0]-eigvel[1])*vxyoi[0]*vxyoi[1])/((eigvel[0]*eigvel[1])*(vxyoi[0]*vxyoi[0]+vxyoi[1]*vxyoi[1]));
                         ITM[3]=(eigvel[1]*vxyoi[1]*vxyoi[1] +eigvel[0]*vxyoi[0]*vxyoi[0])/((eigvel[0]*eigvel[1])*(vxyoi[0]*vxyoi[0]+vxyoi[1]*vxyoi[1]));
 
-                        
+
                         for(cntn=0;cntn<num_neighbor;cntn++)
                         {
                             w->val[cntn][0]=exp(-(ITM[0]*uv_neighbor->val[cntn][0]*uv_neighbor->val[cntn][0]
@@ -2161,7 +2161,7 @@ void get_dpf_pseudosmoothing(GMA_int32 *dpf,GMA_float *dpf_dx, GMA_float *dpf_dy
                         //compare duv_interp with the mean values of the corresponding clusters
                         id_cluster=dpf->val[cntv][cntu];
                         num_cluster=mvn_dp[idx_vec_corr]->nrows;
-                        
+
                         sq_dist_min=1E+37;
                         int8_t flag_update_grid=0;
                         for(cntc=0;cntc<num_cluster;cntc++)
@@ -2170,7 +2170,7 @@ void get_dpf_pseudosmoothing(GMA_int32 *dpf,GMA_float *dpf_dx, GMA_float *dpf_dy
                             duv_cluster[1]=mvn_dp[idx_vec_corr]->val[cntc][1];
                             sq_dist=(duv_interp->val[0][0]-duv_cluster[0])*(duv_interp->val[0][0]-duv_cluster[0])+(duv_interp->val[0][1]-duv_cluster[1])*(duv_interp->val[0][1]-duv_cluster[1]);
                             //NOTE: data type casting is expected at the line above
-                            
+
                             if(sq_dist<sq_dist_min)
                             {
                                 flag_update_grid=1;
@@ -2224,7 +2224,7 @@ void get_dpf_pseudosmoothing(GMA_int32 *dpf,GMA_float *dpf_dx, GMA_float *dpf_dy
                     dpf_dx->val[cntv][cntu]=dxy_ps_buffer[0]->val[cntv][cntu];
                     dpf_dy->val[cntv][cntu]=dxy_ps_buffer[1]->val[cntv][cntu];
                     dpf->val[cntv][cntu]=dpf_ps_buffer->val[cntv][cntu];
-                    
+
                     dxy_ps_buffer[0]->val[cntv][cntu]=N_A_N;
                     dxy_ps_buffer[1]->val[cntv][cntu]=N_A_N;
                     dpf_ps_buffer->val[cntv][cntu]=-1;
@@ -2233,7 +2233,7 @@ void get_dpf_pseudosmoothing(GMA_int32 *dpf,GMA_float *dpf_dx, GMA_float *dpf_dy
         }
 
         //check the fluctuation
-        
+
         for(cntn=NOI-1;cntn>=0;cntn--)
         {
             char flag_difference_found=0;
@@ -2321,12 +2321,12 @@ void quadfit2(GMA_int32 *xy, GMA_double *z, GMA_double *w, GMA_double *xyi, GMA_
     double coeff_quadratic[6];
 
     GMA_double *atwb=GMA_double_create(6,1);
-    
+
     double x,y;
 
     int32_t cnt_row,cnt_col,cnt_obs,cnt_outcol;
 
-    
+
     //calculate A
     for(cnt_row=0;cnt_row<num_obs;cnt_row++)
     {
@@ -2352,7 +2352,7 @@ void quadfit2(GMA_int32 *xy, GMA_double *z, GMA_double *w, GMA_double *xyi, GMA_
             }
         }
     }
-    
+
     //calculate IN
     //printf("Calculating inverse of normal matrix\n");
     GMA_double_inv(N,IN);
@@ -2369,7 +2369,7 @@ void quadfit2(GMA_int32 *xy, GMA_double *z, GMA_double *w, GMA_double *xyi, GMA_
                 atwb->val[cnt_row][0]+=A->val[cnt_obs][cnt_row]*w->val[cnt_obs][0]*z->val[cnt_obs][cnt_outcol];
             }
         }
-        
+
         //calculate coeff_quadratic
         //NI: 6 by 6
         //atwb: 6 by 1
@@ -2413,7 +2413,7 @@ void GMA_double_mul(GMA_double *a, GMA_double *b, GMA_double *out)
 {
     int32_t cnt1,cnt2,cnt3;
     for(cnt1=0;cnt1<a->nrows;cnt1++)  //TODO: consider loop unrolling
-    //TODO: consider applying OMP multithreading 
+    //TODO: consider applying OMP multithreading
     {
         for(cnt2=0;cnt2<b->ncols;cnt2++)
         {
@@ -2431,7 +2431,7 @@ void GMA_double_inv(GMA_double *a, GMA_double *I)
 {
     int32_t cnt1,cnt2,cnt3;
     double pivot,coeff;
-    
+
     GMA_double *b=GMA_double_create(a->nrows,a->ncols);
     //duplicate the matrix a
     for(cnt1=0;cnt1<a->nrows;cnt1++)
@@ -2450,7 +2450,7 @@ void GMA_double_inv(GMA_double *a, GMA_double *I)
             I->val[cnt1][cnt2]=(cnt1==cnt2)?1:0;
         }
     }
-    
+
     //Gaussian elimation - forward
     for(cnt1=0;cnt1<b->nrows-1;cnt1++)
     {
@@ -2488,7 +2488,7 @@ void GMA_double_inv(GMA_double *a, GMA_double *I)
         {
             I->val[cnt1][cnt2]/=b->val[cnt1][cnt1];
         }
-        
+
     }
 
     GMA_double_destroy(b);
@@ -2521,7 +2521,7 @@ void GMA_float_conv2(GMA_float *in, GMA_float *kernel, GMA_float *out)
     int32_t ocwx, ocwy;
     float sum_dn,numel_k,dn_in,dn_min;
     const float N_A_N=sqrt(-1);
-    
+
     dimx_in=(int32_t)in->ncols;
     dimy_in=(int32_t)in->nrows;
     dimx_k=(int32_t)kernel->ncols;
@@ -2565,7 +2565,7 @@ void GMA_float_conv2(GMA_float *in, GMA_float *kernel, GMA_float *out)
             }
         }
     }
-    
+
     //shift the DN and substitute NaN values into 0
     for(cnt1=ocwy;cnt1<dimy_in-ocwy;cnt1++)
     {
@@ -2590,7 +2590,7 @@ int32_t GMA_float_find_median(GMA_float *in, int32_t column_of_interest)
     int32_t out;
     int32_t idx_order_median=(int32_t)((float)(in->nrows)/2+0.5);
 
-    //copy the 
+    //copy the
     //TODO: Keep implementing
 
 }
